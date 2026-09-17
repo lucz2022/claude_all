@@ -8,6 +8,7 @@
   "session_boundary_note": "会话 D 覆盖 [D-1 22:00Z, D 22:00Z)，标签=结束日",
   "window_mode": "rolling_fixed",
   "window_note": "存储为固定深度抓取窗（随采集前移），历史统计非稳定基准（DXY 为 append-only 例外）",
+  "partial_basis": "rows.partial = bars_in_session < 24（框架文档 §4.2 静态 expected_bars，FX 周五/DST 日本就不足 24，故多数会话为 true——不可作筛选依据；L3 派生层实际判据为 bars_in_session < 20）",
   "stats_scope": "source_window",
   "available": 419,
   "truncated": true,
@@ -146,6 +147,6 @@
   ],
   "asof_semantics": "session_start",
   "effective_session": "2026-09-16",
-  "staleness_hours": 10.35,
+  "staleness_hours": 11.82,
   "staleness_status": "ok"
 }

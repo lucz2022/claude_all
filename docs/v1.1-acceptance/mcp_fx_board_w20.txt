@@ -1,5 +1,5 @@
-== fx_board w20 @ through 2026-09-16 (asof 2026-09-17T08:20:58.228533Z, staleness 10.35h) ==
-staleness_hours=10.35  status=ok
+== fx_board w20 @ through 2026-09-16 (asof 2026-09-17T09:49:19.326602Z, staleness 11.82h) ==
+staleness_hours=11.82  status=ok
 dispersion=0.01656418300433078  board_vol=0.023296344281687007  residual_rms=0.0001460629006748993
 ccy     z(win)  z_short    delta  state                  purity
 JPY     +1.120   -0.296   -1.416  UP_DECEL                1.000

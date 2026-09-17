@@ -1,7 +1,7 @@
 schema_version: 1.1
 regime_type: RISK_NEUTRAL_REFLATION_FLAT   asof: 2026-09-15T22:00:00Z
 weather_gauge: -10.47   vix_level: 17.71
-effective_session: 2026-09-16   staleness_hours: 10.35   staleness_status: ok
+effective_session: 2026-09-16   staleness_hours: 11.82   staleness_status: ok
 
 ratios:
   cu_au: level=0.00148924  slope_5d=-0.0005  state=FLAT
@@ -34,6 +34,7 @@ gauge_underlying_exposure:
   XAUUSD: n_components=3  components=['au_spx', 'cu_au', 'gor']  net_sign=+1  abs_weight=0.75
   XTIUSD: n_components=2  components=['gor', 'hg_wti']  net_sign=-1  abs_weight=0.50
 gauge_underlying_concentration: 0.75
+net_sign_convention: 分子记 +1、分母记 −1，对该标的出现的全部 gauge 分量求和后取符号；+1 = 标的价格上升对各比率 log 斜率的净方向为正
 ⚠ gauge_self_reference_warning: XAUUSD — 分析该标的时本 gauge 不独立
 
 coefficient: {"breakout": 0.9, "reversal": 1.0, "trend": 0.8}

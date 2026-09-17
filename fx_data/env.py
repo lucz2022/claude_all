@@ -181,6 +181,9 @@ def compute_env(d1_map: dict[str, pd.DataFrame]) -> dict:
                                     '的逐项分解；差异应仅来自浮点舍入）'},
         'gauge_concentration': concentration,
         'gauge_underlying_exposure': exposure,
+        'net_sign_convention': (
+            '分子记 +1、分母记 −1，对该标的出现的全部 gauge 分量求和后取符号；'
+            '+1 = 标的价格上升对各比率 log 斜率的净方向为正'),
         'gauge_underlying_concentration': underlying_conc,
         'gauge_self_reference_warning': self_ref,
         'gauge_self_reference_note': (

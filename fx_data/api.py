@@ -201,6 +201,10 @@ def get_series(symbol: str, tf: str = 'D1', n: int = 120,
         'window_mode': window_mode,
         'window_note': '存储为固定深度抓取窗（随采集前移），历史统计非稳定基准'
                        '（DXY 为 append-only 例外）',
+        'partial_basis': ('rows.partial = bars_in_session < 24（框架文档 §4.2 '
+                          '静态 expected_bars，FX 周五/DST 日本就不足 24，故多数'
+                          '会话为 true——不可作筛选依据；L3 派生层实际判据为 '
+                          'bars_in_session < 20）'),
         'stats_scope': stats_scope,
         'available': total_avail,
         'truncated': bool(total_avail > len(rows)),

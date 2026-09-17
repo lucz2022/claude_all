@@ -37,7 +37,11 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 # MCP 只做 adapter：领域计算/摘要一律调用 fx_data 已验收实现（单一事实源）
-from fx_data.api import get_env_state, get_series as api_get_series  # noqa: E402
+from fx_data.api import (  # noqa: E402
+    get_env_state,
+    get_pair_context as api_get_pair_context,
+    get_series as api_get_series,
+)
 from fx_data.summary import (  # noqa: E402
     board_compare as api_board_compare,
     board_summary,
@@ -316,6 +320,7 @@ def fx_env() -> str:
         )
     lines += [
         f"gauge_underlying_concentration: {env.get('gauge_underlying_concentration')}",
+        f"net_sign_convention: {env.get('net_sign_convention', '')}",
     ]
     if warn:
         lines.append(f"⚠ gauge_self_reference_warning: {', '.join(warn)} — 分析该标的时本 gauge 不独立")
@@ -384,6 +389,22 @@ def get_series(
     """
     try:
         obj = api_get_series(symbol=symbol, tf=tf, n=n, since=since, asof=asof)
+    except ValueError as e:
+        return json.dumps({"error": str(e)}, ensure_ascii=False)
+    return json.dumps(obj, ensure_ascii=False, indent=2)
+
+
+@mcp.tool()
+def get_pair_context(symbol: str, tf: str = "H1") -> str:
+    """Position-layer context for a pair (framework §5.3): ATR14 / ADX14 /
+    adx_slope_3 / S-R zones / ACS-RCS micro check (proxy) / spread (real source
+    when fresh) / ohlc_tail (<=60 bars).
+
+    与 get_series 并存而非替代：本端点是引擎指标的可查结果，
+    get_series 保持原始 OHLCV 反审计通道。
+    """
+    try:
+        obj = api_get_pair_context(symbol=symbol, tf=tf)
     except ValueError as e:
         return json.dumps({"error": str(e)}, ensure_ascii=False)
     return json.dumps(obj, ensure_ascii=False, indent=2)

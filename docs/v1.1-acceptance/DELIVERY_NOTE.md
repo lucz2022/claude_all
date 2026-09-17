@@ -43,6 +43,29 @@ NONE
 - 状态机四态在隔离目录单测验证：首次捕获/同日重跑不覆盖 Day1/新 session
   自动 Day2 且 Day1 保持 402r/回退 FAIL。
 
+## 缺口分析（fx-data-gap-analysis-v1.1.md）工程项处置
+
+- **E-4（P1）已验证非缺陷**：新增 tests/test_e4_token_persistence.py —— 完整
+  OAuth dance（注册→授权→换 token）→ 用 token 调用成功 → **重启 server
+  （全新进程，同一 oauth_store.json）→ 同一 token 再次调用仍成功**；固定
+  Bearer（env 驱动）跨重启同样有效。结论：服务端 token 持久化正常
+  （oauth_store.json 机制工作正常）；此前观察到的掉授权为客户端侧重连
+  问题，非服务端状态丢失。已留作回归测试。
+- **E-5（P1）已完成**：MCP 新增 `get_pair_context(symbol, tf)` 端点（纯
+  adapter → fx_data.api.get_pair_context），tools/list 现含 12 个工具；
+  §5.3 指标（ATR14/ADX14/adx_slope_3/S-R 区/ACS-RCS proxy/真实点差/
+  ohlc_tail ≤60）经 tools/call 实测可达，与 get_series 反审计通道并存。
+- **E-3（P2）已完成**：env 输出新增 `net_sign_convention` 字段（分子 +1、
+  分母 −1 求和取符号），fx_env MCP 摘要同步透出。
+- **E-2（P2）处置为披露而非改计算**：get_series 顶层新增 `partial_basis`
+  说明字段（partial = bars_in_session<24 静态判据，多数 FX 会话恒 true，
+  L3 实际判据 <20）；不改 rebuild_d1 语义（v1.1 验收已锁定）。
+- **C-1~C-6 消费约定已固化**：docs/consumption-conventions.md（跨源比价
+  先对齐会话边界/gauge 自我参照降权/purity<0.60 降权/Δ 冲突转人工/
+  staleness>30 不用于当日决策/partial 不可作筛选依据）。
+- G-1/G-4（P1 外部采购）与 G-2/G-3（P2）维持缺口清单，见
+  docs/P3-research.md；E-1（A-4 真实跨日）继续 PENDING 自动闭环。
+
 ## 验收结果（acceptance_mcp_run2_clean_process.log）
 
 ENGINE: A-1/A-2/A-5 PASS；A-4-REALTIME PENDING_REAL_NEXT_SESSION（Day1=402r/2025-03-04..2026-09-16 永久 baseline 已固化；replay 验证通过；真实跨日未出现；A-4-METADATA PASS）

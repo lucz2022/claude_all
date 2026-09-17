@@ -4,6 +4,7 @@ dxy_series
 fx_board
 fx_board_compare
 fx_env
+get_pair_context
 get_series
 list_data_files
 read_json
