@@ -14,3 +14,4 @@ oauth_store.json
 data/raw/
 data/norm/
 data/qc/
+rclone*/
