@@ -1,0 +1,54 @@
+{
+  "schema_version": "1.1",
+  "regime_type": "RISK_NEUTRAL_REFLATION_FLAT",
+  "gauge_underlying_exposure": {
+    "HG": {
+      "n_components": 2,
+      "components": [
+        "cu_au",
+        "hg_wti"
+      ],
+      "net_sign": 1,
+      "abs_weight": 0.5
+    },
+    "XAUUSD": {
+      "n_components": 3,
+      "components": [
+        "au_spx",
+        "cu_au",
+        "gor"
+      ],
+      "net_sign": 1,
+      "abs_weight": 0.75
+    },
+    "XTIUSD": {
+      "n_components": 2,
+      "components": [
+        "gor",
+        "hg_wti"
+      ],
+      "net_sign": -1,
+      "abs_weight": 0.5
+    },
+    "US500": {
+      "n_components": 1,
+      "components": [
+        "au_spx"
+      ],
+      "net_sign": -1,
+      "abs_weight": 0.25
+    }
+  },
+  "gauge_underlying_concentration": 0.75,
+  "gauge_self_reference_warning": [
+    "XAUUSD"
+  ],
+  "gauge_self_reference_note": "warning 中的标的（abs_weight>0.5，严格大于）：用本 gauge 分析该标的自身必须降权或显式标注——gauge 对其不是独立环境信号，而是其自身波动的镜像",
+  "reflation_real_source": "unavailable — 当前未接入真实利率数据，不冒充真实利率维度；如需真实利率需另接 FRED 2Y/10Y （文档 §1.1 的 FRED 2Y 在本代码库未实现）",
+  "gauge_sum_check": {
+    "sum_contrib": -10.473788445855453,
+    "weather_gauge": -10.473788445855453,
+    "abs_diff": 0.0,
+    "note": "gauge = Σcontrib（数学恒等：mean(parts)×100 的逐项分解；差异应仅来自浮点舍入）"
+  }
+}

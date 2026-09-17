@@ -1,0 +1,25 @@
+=== data MCP v1.1 acceptance ===
+A-1 PASS  -- RISK_NEUTRAL_REFLATION_FLAT, threshold ok, value==slope_5d
+A-2 PASS  -- invariants ok; (!)=['AUD', 'CHF', 'EUR', 'GBP']; 排行前2=['JPY', 'USD']
+A-3 PASS  -- 冲突=['CAD', 'EUR', 'JPY', 'NZD']（预期 ['CAD', 'EUR', 'JPY', 'NZD']；若数据新 session 更新则以实际为准，但必须非空且逐行有 符号 列）
+A-4 PENDING_REAL_NEXT_SESSION  -- stored rows=402, first=2025-03-04; replay(旧首日保留+行数只增)=ok; 真实跨日未出现（simulation/replay verification）
+A-5 PASS  -- cumulative_index_mode=NONE（无累积指数，无起点可漂移）；无cumsum/cumprod=True；两点对数差=True；w20/w50 一致=True；重算幂等=True
+A-6 PASS  -- rows=120; 末session==env.effective_session=True; GOR rel_err=2.22e-16; CU/AU rel_err=3.33e-16
+A-7 PASS  -- banned fields found: []; 全 JSON 递归扫描 (28 keys)
+A-8 B1 PASS
+A-8 B2 PASS
+A-8 B3 PASS
+A-8 B4 PASS
+A-8 symbol/tf 开放面 PASS  -- XAUUSD/XTIUSD/US500/HG D1 + XAUUSD H1；HG 为 fx_env 同一连续序列（get_series HG == env.sources.copper 数据链，实测 CU/AU 通过）
+A-9 PASS  -- rule abs_weight>0.5; warning=["XAUUSD"]; net_sign=标的价格上升对各 gauge ratio 的代数方向合计后的符号
+R-1 PASS  -- abs_diff=0.0
+R-2 PASS
+R-3 PASS  -- unavailable — 当前未接入真实利率数据，不冒充真实利率维度；如需真实利率需另…
+R-4 PASS
+R-5 PASS  -- 9.12h
+R-6 PASS  -- 28 pairs
+R-7 PASS  -- rms=1.46e-04, max/median=4.0
+
+BLOCKING FAILURES: 0
+PENDING EXTERNAL-TIME TESTS: A-4
+READY_EXCEPT_A4_REAL_TIME_CONFIRMATION

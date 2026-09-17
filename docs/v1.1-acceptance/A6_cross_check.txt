@@ -1,0 +1,6 @@
+A-6 同源交叉验证（get_series 末根 vs L1 norm parquet）
+
+XAUUSD: rows[-1]=2026-09-16 close=4263.91 | L1=2026-09-16 close=4263.91 -> 一致
+XTIUSD: rows[-1]=2026-09-16 close=102.03 | L1=2026-09-16 close=102.03 -> 一致
+HG: rows[-1]=2026-09-16 close=6.35 | L1=2026-09-16 close=6.35 -> 一致
+US500: rows[-1]=2026-09-16 close=7552.7 | L1=2026-09-16 close=7552.7 -> 一致

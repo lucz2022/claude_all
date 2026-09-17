@@ -1,0 +1,13 @@
+A-8 边界行为（真实调用输出）
+
+B1: get_series("FAKEXYZ")
+  ValueError: symbol 必须为 ['AUDUSD', 'DXY', 'EURCHF', 'EURGBP', 'EURUSD', 'GBPCHF', 'HG', 'US500', 'USDCHF', 'USDJPY', 'XAUUSD', 'XBRUSD', 'XTIUSD'] 之一，实得 'FAKEXYZ'
+
+B2: get_series("XAUUSD", n=99999)
+  row_count=419 available=419 truncated=False window_mode=rolling_fixed
+
+B3: get_series("XAUUSD", tf="M5")
+  ValueError: tf 必须为 'D1' 或 'H1'，实得 'M5'
+
+B4: partial 会话正常透出（HG 近 2000 行中 partial=true 的行数）
+  partial=true 行数: 503/503（正常返回，由消费方决定是否剔除）

@@ -1,0 +1,6 @@
+.env
+.mcp.json
+claude-code.mcp.json
+oauth_store.json
+__pycache__/
+*.pyc

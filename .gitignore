@@ -1,0 +1,16 @@
+# Python 临时文件
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+
+# 敏感 / 本地凭据（不入库）
+.env
+.mcp.json
+claude-code.mcp.json
+oauth_store.json
+
+# 数据流水线产物（可再生，暂不同步；仅保留 data/derived/）
+data/raw/
+data/norm/
+data/qc/

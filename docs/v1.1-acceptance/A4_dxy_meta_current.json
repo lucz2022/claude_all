@@ -1,0 +1,13 @@
+{
+  "window_mode": "append_only",
+  "stats_scope": "full_history",
+  "window_rows": "402",
+  "first_session": "2025-03-04",
+  "last_session": "2026-09-16",
+  "stats_min": "95.75013967781224",
+  "stats_max": "105.57991530988527",
+  "stats_mean": "99.28790455666912",
+  "append_only_note": "只追加新会话；源滚动窗滚出的历史行永久保留。首会话固定为 append-only 采用日，不随源前移。",
+  "warning": "append-only 采用日之前的历史从未入存储，全历史统计自采用日起算；跨日比较该起点之前不可用。",
+  "_跨日判据": "下一交易日 build 后须满足: rows=403, first_session 仍为 2025-03-04, last_session=+1, 且 2025-03-04 行仍存在 → 即可通过"
+}

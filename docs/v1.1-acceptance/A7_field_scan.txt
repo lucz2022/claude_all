@@ -1,0 +1,17 @@
+A-7 字段白名单扫描（get_series XAUUSD D1 n=10，真实输出）
+
+允许字段集: ['bars_in_session', 'close', 'high', 'low', 'open', 'partial', 'roll_flag', 'segment_id', 'session_date', 'volume']
+禁止字段（派生指标）: ('atr', 'adx', 'sma', 'ema', 'rsi', 'z', 'slope', 'trend', 'state', 'membership', 'delta', 'purity')
+
+row[0] 2026-09-03: keys=['bars_in_session', 'close', 'high', 'low', 'open', 'partial', 'roll_flag', 'segment_id', 'session_date', 'volume'] -> OK
+row[1] 2026-09-04: keys=['bars_in_session', 'close', 'high', 'low', 'open', 'partial', 'roll_flag', 'segment_id', 'session_date', 'volume'] -> OK
+row[2] 2026-09-07: keys=['bars_in_session', 'close', 'high', 'low', 'open', 'partial', 'roll_flag', 'segment_id', 'session_date', 'volume'] -> OK
+row[3] 2026-09-08: keys=['bars_in_session', 'close', 'high', 'low', 'open', 'partial', 'roll_flag', 'segment_id', 'session_date', 'volume'] -> OK
+row[4] 2026-09-09: keys=['bars_in_session', 'close', 'high', 'low', 'open', 'partial', 'roll_flag', 'segment_id', 'session_date', 'volume'] -> OK
+row[5] 2026-09-10: keys=['bars_in_session', 'close', 'high', 'low', 'open', 'partial', 'roll_flag', 'segment_id', 'session_date', 'volume'] -> OK
+row[6] 2026-09-11: keys=['bars_in_session', 'close', 'high', 'low', 'open', 'partial', 'roll_flag', 'segment_id', 'session_date', 'volume'] -> OK
+row[7] 2026-09-14: keys=['bars_in_session', 'close', 'high', 'low', 'open', 'partial', 'roll_flag', 'segment_id', 'session_date', 'volume'] -> OK
+row[8] 2026-09-15: keys=['bars_in_session', 'close', 'high', 'low', 'open', 'partial', 'roll_flag', 'segment_id', 'session_date', 'volume'] -> OK
+row[9] 2026-09-16: keys=['bars_in_session', 'close', 'high', 'low', 'open', 'partial', 'roll_flag', 'segment_id', 'session_date', 'volume'] -> OK
+
+结论: 通过——全部行仅含原始 OHLCV+追溯字段，无任何派生指标
