@@ -1,8 +1,14 @@
 === data MCP v1.1 FINAL acceptance ===
+RUN_ID: 87fd013f
+PID: 17004
+SERVER_PORT: 21198
+STARTED_AT_UTC: 2026-09-17T08:20:48.193840+00:00
+COMMIT: 4b01389912a751cefd0e7ddda83f09990dcc0329
+
 A-1 ENGINE PASS  -- RISK_NEUTRAL_REFLATION_FLAT
 A-2 ENGINE PASS  -- JSON invariants
 A-5 ENGINE PASS  -- NONE: no_cum=True, two_point=True, prefix_indep=True, idempotent=True
-A-4 PENDING_REAL_NEXT_SESSION  -- day1=402r first=2025-03-04 last=2026-09-16; replay ok=True; simulation/replay verification only
+A-4-REALTIME PENDING_REAL_NEXT_SESSION  -- no new real session; Day1 preserved: 402r 2025-03-04..2026-09-16; current=402r; replay=True
 
 MCP E2E
 TOOLS-LIST PASS  -- ['clean_csv', 'clean_json', 'dxy_series', 'fx_board', 'fx_board_compare', 'fx_env', 'get_series', 'list_data_files', 'read_json', 'read_parquet', 'sql_query']
@@ -10,7 +16,7 @@ A-1 PASS  -- tools/call fx_env
 A-9 PASS  -- concentration/warning/⚠ + VIX 不在 exposure
 A-2 PASS  -- (!)x4, top2=['JPY', 'USD'], header ok=True
 A-3 PASS  -- 逐行符号独立核算 8 行; 冲突=['CAD', 'EUR', 'JPY', 'NZD']
-A-4 E2E PASS  -- dxy_series metadata（真实跨日仍 PENDING）
+A-4-METADATA PASS  -- dxy_series 元数据（append_only/full_history/first_session）
 A-6 PASS  -- contract=True, UTC-Z=True, boundary=True, session=True, GOR=2.2e-16, CU/AU=3.3e-16
 A-7 PASS  -- banned fields found: []; row extra: []; 全树 29 keys 递归
 A-8 B1 PASS  -- symbol 必须为 ['AUDUSD', 'DXY', 'EURCHF', 'EURGBP', 'EURUSD', 'GBPCHF', 'HG', 'US50
@@ -22,11 +28,11 @@ R-1 PASS  -- abs_diff=0.0
 R-2 PASS
 R-3 PASS  -- unavailable — 当前未接入真实利率数据，不冒充真实利率维度；如需真实…
 R-4 PASS
-R-5 PASS  -- 10.02h
+R-5 PASS  -- 10.35h
 R-6 PASS  -- w20/w50 各 28 pairs
 R-7-w20 PASS  -- rms=1.46e-04, max/median=4.0
 R-7-w50 PASS  -- rms=1.04e-04, max/median=6.9
 
 BLOCKING FAILURES: 0
-PENDING: A-4
+PENDING: A-4-REALTIME
 READY_EXCEPT_A4_REAL_TIME_CONFIRMATION

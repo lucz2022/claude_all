@@ -25,10 +25,27 @@ NONE
   实测 MCP SDK 在长 SSE 会话上工具异常不回包，结构化错误为接口层修复，
   不涉及核心计算
 
+## 本轮（最终两项闭环）改动
+
+- data-mcp-acceptance-v1.1.md：A-5 判定表正式纳入 NONE 分支（四条件：无累计
+  状态/只依赖窗口/Prefix independence/重算幂等；任一失败 FAIL），签收表同步
+  增加 NONE 选项——只改验收文档，未改实现。
+- tests/acceptance_mcp_v1_1.py：A-4 改为跨 session 状态机——Day1 为永久
+  baseline（仅首次创建，绝不覆盖，附 schema/captured_at_utc/commit 来源）；
+  同 session 重跑保持 Day1 并 PENDING；检测到真实下一 session 自动写 Day2
+  并验证 rows 增加/first_session 不变/last_session 前进/Day1 首行在当前
+  parquet 中仍存在；last_session 回退判 FAIL。状态名拆分为
+  **A-4-METADATA**（dxy_series 元数据口径，PASS）与 **A-4-REALTIME**
+  （真实跨日，PENDING_REAL_NEXT_SESSION），总状态以 A-4-REALTIME 为准。
+- 验收日志头部增加 RUN_ID/PID/SERVER_PORT/STARTED_AT_UTC/COMMIT 运行
+  元数据（双跑对比时忽略该节，只比 PASS/FAIL/PENDING）；initialize 增加
+  401 竞态重试（readiness 边缘偶发）。
+- 状态机四态在隔离目录单测验证：首次捕获/同日重跑不覆盖 Day1/新 session
+  自动 Day2 且 Day1 保持 402r/回退 FAIL。
+
 ## 验收结果（acceptance_mcp_run2_clean_process.log）
 
-ENGINE: A-1/A-2/A-5 PASS；A-4 PENDING_REAL_NEXT_SESSION（day1=402r/
-2025-03-04 快照已存 A4_dxy_day1.json；replay 验证通过；真实跨日未出现）
+ENGINE: A-1/A-2/A-5 PASS；A-4-REALTIME PENDING_REAL_NEXT_SESSION（Day1=402r/2025-03-04..2026-09-16 永久 baseline 已固化；replay 验证通过；真实跨日未出现；A-4-METADATA PASS）
 MCP E2E: TOOLS-LIST PASS（get_series 已注册）
 A-1/A-2/A-3/A-5/A-6/A-7/A-8 B1-B4/A-9 全 PASS
 （A-2: (!)x4 top2=JPY,USD；A-3: 逐行符号核算冲突=CAD/EUR/JPY/NZD；
@@ -37,7 +54,7 @@ R-1~R-6 PASS；R-7-w20 PASS（rms=1.46e-04, max/median=4.0）；
 R-7-w50 PASS（rms=1.04e-04, max/median=6.9）
 
 BLOCKING FAILURES: 0
-PENDING: A-4 REAL NEXT SESSION
+PENDING: A-4-REALTIME
 READY_EXCEPT_A4_REAL_TIME_CONFIRMATION
 
 ## 双 clean-process 一致性

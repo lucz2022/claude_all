@@ -224,6 +224,16 @@ def parse_compare_rows(text):
 
 def main():
     print('=== data MCP v1.1 FINAL acceptance ===', flush=True)
+    # 运行元数据（双跑对比时忽略本节，只比 PASS/FAIL/PENDING 结论）
+    import subprocess as _sp, os as _os, uuid as _uuid
+    _sha = _sp.run(['git', '-C', str(ROOT), 'rev-parse', 'HEAD'],
+                   capture_output=True, text=True).stdout.strip()
+    print(f'RUN_ID: {_uuid.uuid4().hex[:8]}', flush=True)
+    print(f'PID: {_os.getpid()}', flush=True)
+    print(f'SERVER_PORT: {PORT}', flush=True)
+    print(f'STARTED_AT_UTC: {pd.Timestamp.now("UTC").isoformat()}', flush=True)
+    print(f'COMMIT: {_sha}', flush=True)
+    print('', flush=True)
 
     # ---------------- ENGINE（内部 API 层，unit validation） ----------------
     from fx_data.api import get_env_state, get_series, get_strength_board
@@ -261,19 +271,25 @@ def main():
         f'NONE: no_cum={no_cum}, two_point={two_pt}, prefix_indep={prefix_ok}, '
         f'idempotent={idem}')
 
-    # A-4 Day1 snapshot + replay
+    # A-4 跨 session 状态机（Day1=永久 baseline，绝不覆盖；Day2=当前验证样本）
     from fx_data import storage
     import pyarrow.parquet as pq
     md = pq.read_schema(ROOT / 'data/derived/dxy__D1.parquet').metadata
-    day1 = {'rows': int(md[b'window_rows']),
-            'first_session': md[b'first_session'].decode(),
-            'last_session': md[b'last_session'].decode(),
-            'stats_min': float(md[b'stats_min']),
-            'stats_max': float(md[b'stats_max']),
-            'stats_mean': float(md[b'stats_mean'])}
-    (ROOT / 'docs/v1.1-acceptance/A4_dxy_day1.json').write_text(
-        json.dumps(day1, ensure_ascii=False, indent=2), encoding='utf-8')
+    import subprocess as _sp
+    _sha = _sp.run(['git', '-C', str(ROOT), 'rev-parse', 'HEAD'],
+                   capture_output=True, text=True).stdout.strip()[:12]
+    current = {'schema': 'A4-dxy-cross-session-v1',
+               'captured_at_utc': pd.Timestamp.now('UTC').isoformat(),
+               'commit': _sha,
+               'rows': int(md[b'window_rows']),
+               'first_session': md[b'first_session'].decode(),
+               'last_session': md[b'last_session'].decode(),
+               'stats_min': float(md[b'stats_min']),
+               'stats_max': float(md[b'stats_max']),
+               'stats_mean': float(md[b'stats_mean'])}
+    day1_path = ROOT / 'docs/v1.1-acceptance/A4_dxy_day1.json'
     day2_path = ROOT / 'docs/v1.1-acceptance/A4_dxy_day2.json'
+    # replay 验证（simulation，不冒充真实跨日）
     import shutil
     tmp = ROOT / 'data/derived/_a4r'
     shutil.rmtree(tmp, ignore_errors=True)
@@ -281,29 +297,57 @@ def main():
     orig = storage.config.DIR_DERIVED
     try:
         storage.config.DIR_DERIVED = tmp
-        storage.write_derived(pd.DataFrame({'session_date': [day1['first_session'],
-                                                             'x'],
-                                            'close': [1.0, 2.0]}), 'p__D1')
+        storage.write_derived(pd.DataFrame(
+            {'session_date': [current['first_session'], 'x'],
+             'close': [1.0, 2.0]}), 'p__D1')
         m2 = storage.append_only_merge('p__D1', pd.DataFrame(
             {'session_date': ['x', 'y'], 'close': [2.1, 3.0]}))
         replay = (len(m2) == 3 and str(m2['session_date'].iloc[0])
-                  == day1['first_session'])
+                  == current['first_session'])
     finally:
         storage.config.DIR_DERIVED = orig
         shutil.rmtree(tmp, ignore_errors=True)
-    if day2_path.exists():
-        day2 = json.loads(day2_path.read_text(encoding='utf-8'))
-        real = (day2['rows'] > day1['rows']
-                and day2['first_session'] == day1['first_session']
-                and day2['last_session'] > day1['last_session'])
-        rec('A-4', 'PASS' if (replay and real) else 'FAIL',
-            f"day1={day1['rows']}r/{day1['first_session']} "
-            f"day2={day2['rows']}r/{day2['first_session']}")
+
+    if not day1_path.exists():
+        # 状态 1：Day1 不存在 → 首次捕获（此后绝不覆盖）
+        day1_path.write_text(json.dumps(current, ensure_ascii=False, indent=2),
+                             encoding='utf-8')
+        day1 = current
+        rec('A-4-REALTIME', 'PENDING_REAL_NEXT_SESSION',
+            f"Day1 captured: {current['rows']}r "
+            f"{current['first_session']}..{current['last_session']}; "
+            f"replay={replay}")
     else:
-        rec('A-4', 'PENDING_REAL_NEXT_SESSION',
-            f"day1={day1['rows']}r first={day1['first_session']} "
-            f"last={day1['last_session']}; replay ok={replay}; "
-            f'simulation/replay verification only')
+        day1 = json.loads(day1_path.read_text(encoding='utf-8'))
+        if current['last_session'] == day1['last_session']:
+            # 状态 2：无新 session → 保持 Day1，不写 Day2
+            rec('A-4-REALTIME', 'PENDING_REAL_NEXT_SESSION',
+                f"no new real session; Day1 preserved: {day1['rows']}r "
+                f"{day1['first_session']}..{day1['last_session']}; "
+                f"current={current['rows']}r; replay={replay}")
+        elif current['last_session'] > day1['last_session']:
+            # 状态 3：真实下一 session → 写 Day2 并做正式跨日验收
+            day2_path.write_text(json.dumps(current, ensure_ascii=False,
+                                            indent=2), encoding='utf-8')
+            day2 = current
+            stored = storage.read_derived('dxy__D1')
+            first_still_exists = (day1['first_session']
+                                  in set(stored['session_date'].astype(str)))
+            real_ok = (replay
+                       and day2['rows'] > day1['rows']
+                       and day2['first_session'] == day1['first_session']
+                       and day2['last_session'] > day1['last_session']
+                       and first_still_exists)
+            rec('A-4-REALTIME', 'PASS' if real_ok else 'FAIL',
+                f"Day1={day1['rows']}r/"
+                f"{day1['first_session']}..{day1['last_session']} "
+                f"Day2={day2['rows']}r/"
+                f"{day2['first_session']}..{day2['last_session']} "
+                f"first_preserved={first_still_exists}")
+        else:
+            rec('A-4-REALTIME', 'FAIL',
+                'current last_session regressed behind Day1 '
+                f"({current['last_session']} < {day1['last_session']})")
 
     # ---------------- MCP E2E ----------------
     print('', flush=True)
@@ -311,8 +355,16 @@ def main():
     url = None
     try:
         url = start_server()
-        cli = McpHttpClient(url, this_token)
-        cli.initialize()
+        cli = None
+        for _attempt in range(3):        # 401 竞态重试（readiness 边缘偶发）
+            try:
+                cli = McpHttpClient(url, this_token)
+                cli.initialize()
+                break
+            except RuntimeError as e:
+                if '401' not in str(e) or _attempt == 2:
+                    raise
+                time.sleep(1.0)
 
         # tools/list
         tl = cli.list_tools()
@@ -375,16 +427,13 @@ def main():
         rec('A-3', 'PASS' if a3 else 'FAIL',
             f'逐行符号独立核算 {len(rows)} 行; 冲突={sorted(expected_conflicts)}')
 
-        # A-4 E2E：dxy_series
+        # A-4 METADATA（E2E）：dxy_series 元数据口径（与 A-4-REALTIME 分状态）
         dxy_txt = tool_text(cli.call('dxy_series', {'n': 5}))
         a4m = ('window_mode: append_only' in dxy_txt
                and 'stats_scope: full_history' in dxy_txt
                and 'first_session: 2025-03-04' in dxy_txt)
-        if day2_path.exists():
-            rec('A-4 E2E', 'PASS' if a4m else 'FAIL', 'dxy_series metadata')
-        else:
-            rec('A-4 E2E', 'PASS' if a4m else 'FAIL',
-                'dxy_series metadata（真实跨日仍 PENDING）')
+        rec('A-4-METADATA', 'PASS' if a4m else 'FAIL',
+            'dxy_series 元数据（append_only/full_history/first_session）')
 
         # A-6 E2E：完整 contract
         x120 = json.loads(tool_text(cli.call(

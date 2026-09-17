@@ -1,7 +1,7 @@
 schema_version: 1.1
 regime_type: RISK_NEUTRAL_REFLATION_FLAT   asof: 2026-09-15T22:00:00Z
 weather_gauge: -10.47   vix_level: 17.71
-effective_session: 2026-09-16   staleness_hours: 10.03   staleness_status: ok
+effective_session: 2026-09-16   staleness_hours: 10.35   staleness_status: ok
 
 ratios:
   cu_au: level=0.00148924  slope_5d=-0.0005  state=FLAT
