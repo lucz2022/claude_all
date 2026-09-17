@@ -1,0 +1,6 @@
+A-7 MCP E2E 递归扫描（get_series XAUUSD D1 n=10 经 tools/call）
+BANNED(24): ['adx', 'adx14', 'adx_slope', 'atr', 'atr14', 'bb_lower', 'bb_upper', 'ema', 'fvg', 'ma', 'macd', 'momentum', 'poi', 'resistance', 'rsi', 'signal', 'slope', 'sma', 'sr_zone', 'state', 'support', 'trend', 'z', 'zscore']
+全树 keys(29): ['asof_semantics', 'available', 'bars_in_session', 'canonical_name', 'close', 'effective_session', 'high', 'low', 'open', 'partial', 'price_kind', 'roll_flag', 'row_count', 'rows', 'segment_id', 'session_boundary_note', 'session_boundary_utc', 'session_date', 'source', 'staleness_hours', 'staleness_status', 'stats_scope', 'symbol', 'tf', 'truncated', 'ts_utc', 'volume', 'window_mode', 'window_note']
+banned found: []
+rows 字段 ⊆ ALLOWED_ROW: True
+结论: PASS

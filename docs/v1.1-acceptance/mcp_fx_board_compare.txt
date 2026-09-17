@@ -1,0 +1,22 @@
+== fx_board_compare w20(@2026-09-16) vs w50(@2026-09-16) ==
+ccy       z(a)  z_short     Δ(a)     Δ(b)     符号     z(b)  z_shift  state(a)            
+AUD     +0.390   -0.312   -0.702   -0.645     一致   +0.599   -0.209  UP_DECEL(!)         
+CAD     +0.044   +0.128   +0.084   -0.193  冲突(!)   +0.221   -0.177  FLAT_FLAT           
+CHF     -0.862   -0.456   +0.406   +0.600     一致   -1.098   +0.236  DOWN_FLAT(!)        
+EUR     -0.185   +0.008   +0.193   -0.017  冲突(!)   -0.135   -0.050  FLAT_FLAT(!)        
+GBP     -0.128   +0.214   +0.342   +0.202     一致   -0.326   +0.198  FLAT_FLAT(!)        
+JPY     +1.120   -0.296   -1.416   +0.203  冲突(!)   +1.264   -0.145  UP_DECEL            
+NZD     -0.985   -0.801   +0.185   -0.908  冲突(!)   -0.230   -0.755  DOWN_FLAT           
+USD     +0.606   +1.515   +0.909   +0.759     一致   -0.295   +0.901  UP_ACCEL            
+
+Δ 符号冲突（快慢窗口动能方向打架，方向判断降权/转人工）: CAD, EUR, JPY, NZD
+
+-- 动量转折排行（|delta| 降序，a 窗）--
+1. JPY   delta=-1.416  UP_DECEL
+2. USD   delta=+0.909  UP_ACCEL
+3. AUD   delta=-0.702  UP_DECEL(!)
+4. CHF   delta=+0.406  DOWN_FLAT(!)
+5. GBP   delta=+0.342  FLAT_FLAT(!)
+6. EUR   delta=+0.193  FLAT_FLAT(!)
+7. NZD   delta=+0.185  DOWN_FLAT
+8. CAD   delta=+0.084  FLAT_FLAT

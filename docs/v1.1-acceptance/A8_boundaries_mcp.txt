@@ -1,0 +1,7 @@
+B1: symbol 必须为 ['AUDUSD', 'DXY', 'EURCHF', 'EURGBP', 'EURUSD', 'GBPCHF', 'HG', 'US500', 'USDCHF', 'USDJPY', 'XAUUSD', 'XBRUSD', 'XTIUSD'] 之一，实得 'FAKEXYZ'
+
+B2: row_count=419 available=419 truncated=False
+
+B3: tf 必须为 'D1' 或 'H1'，实得 'M5'
+
+B4: partial=true rows=503/503（正常透出）

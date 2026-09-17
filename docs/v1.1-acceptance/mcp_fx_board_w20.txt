@@ -1,0 +1,15 @@
+== fx_board w20 @ through 2026-09-16 (asof 2026-09-17T08:01:38.488445Z, staleness 10.03h) ==
+staleness_hours=10.03  status=ok
+dispersion=0.01656418300433078  board_vol=0.023296344281687007  residual_rms=0.0001460629006748993
+ccy     z(win)  z_short    delta  state                  purity
+JPY     +1.120   -0.296   -1.416  UP_DECEL                1.000
+USD     +0.606   +1.515   +0.909  UP_ACCEL                0.909
+AUD     +0.390   -0.312   -0.702  UP_DECEL(!)             0.548
+CAD     +0.044   +0.128   +0.084  FLAT_FLAT               0.835
+GBP     -0.128   +0.214   +0.342  FLAT_FLAT(!)            0.490
+EUR     -0.185   +0.008   +0.193  FLAT_FLAT(!)            0.509
+CHF     -0.862   -0.456   +0.406  DOWN_FLAT(!)            0.594
+NZD     -0.985   -0.801   +0.185  DOWN_FLAT               0.815
+(!) = purity<0.60，state 标签不确定，读取降权
+
+动能转折排行 (|Δ| desc): JPY -1.416 | USD +0.909 | AUD -0.702 | CHF +0.406 | GBP +0.342

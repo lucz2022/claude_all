@@ -1,0 +1,41 @@
+schema_version: 1.1
+regime_type: RISK_NEUTRAL_REFLATION_FLAT   asof: 2026-09-15T22:00:00Z
+weather_gauge: -10.47   vix_level: 17.71
+effective_session: 2026-09-16   staleness_hours: 10.03   staleness_status: ok
+
+ratios:
+  cu_au: level=0.00148924  slope_5d=-0.0005  state=FLAT
+  gor: level=41.7907  slope_5d=-0.0049  state=CONTRACTING
+  hg_wti: level=0.0622366  slope_5d=-0.0055  state=CONTRACTING
+  au_spx: level=0.564554  slope_5d=-0.0017  state=FLAT
+
+regime_inputs:
+  reflation_proxy: cu_au(铜金比) 5d log-ratio 斜率状态
+  reflation_value: -0.0005463162423700159
+  reflation_state: FLAT
+  reflation_direction_convention: EXPANDING→REFLATION_UP（铜相对走强=再通胀/增长假设）
+  reflation_threshold: |slope| < SLOPE_EPS=0.002 视为 FLAT
+  reflation_data_source: ibkr:HG连续 + mt5:XAUUSD（商品比率，非利率数据）
+  reflation_real_source: unavailable — 当前未接入真实利率数据，不冒充真实利率维度；如需真实利率需另接 FRED 2Y/10Y （文档 §1.1 的 FRED 2Y 在本代码库未实现）
+  reflation_coverage_note: 单一商品比率代理无法区分短端/长端；即便接入 2Y 单点亦无法代表长端
+  risk_proxy: weather_gauge（4 比率标准化 5d 斜率均值×100）  risk_value: -10.473788445855453
+
+gauge_sum_check: abs_diff=0.0  sum=-10.473788445855453  gauge=-10.473788445855453
+gauge_components:
+  cu_au: label=copper/gold  z20=0.6940465081834357  z50=-0.6045826137007562  contrib=-0.6639268599349041
+  gor: label=gold/oil  z20=-2.2379541583418887  z50=-0.46378425867600787  contrib=-3.6322088898798963
+  hg_wti: label=copper/oil  z20=-1.8175615310742104  z50=-0.8751620751449936  contrib=-3.7418112063243774
+  au_spx: label=gold/es  z20=-0.9559477437265079  z50=0.6713430957237697  contrib=-2.435841489716275
+  vix: label=vix(level-only)  z20=None  z50=None  contrib=0.0  [非 weather_gauge 输入，仅作 vix_level 监控披露]
+
+gauge_underlying_exposure:
+  HG: n_components=2  components=['cu_au', 'hg_wti']  net_sign=+1  abs_weight=0.50
+  US500: n_components=1  components=['au_spx']  net_sign=-1  abs_weight=0.25
+  XAUUSD: n_components=3  components=['au_spx', 'cu_au', 'gor']  net_sign=+1  abs_weight=0.75
+  XTIUSD: n_components=2  components=['gor', 'hg_wti']  net_sign=-1  abs_weight=0.50
+gauge_underlying_concentration: 0.75
+⚠ gauge_self_reference_warning: XAUUSD — 分析该标的时本 gauge 不独立
+
+coefficient: {"breakout": 0.9, "reversal": 1.0, "trend": 0.8}
+calendar_intersection_ratio: 0.9713603818615751
+sources: {"copper": "ibkr:HG连续(比例回调, roll_on 到期规则活跃腿)", "vix": "ibkr:VIX", "gold": "mt5:XAUUSD", "oil": "mt5:XTIUSD", "spx": "mt5:US500"}

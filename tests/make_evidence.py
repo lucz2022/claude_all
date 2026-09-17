@@ -34,10 +34,8 @@ x10 = get_series('XAUUSD', tf='D1', n=10)
 (OUT / 'A6-A7_get_series_XAUUSD_D1_n10.json').write_text(
     json.dumps(x10, ensure_ascii=False, indent=2), encoding='utf-8')
 
-ALLOWED = {'session_date', 'open', 'high', 'low', 'close', 'volume',
-           'segment_id', 'roll_flag', 'bars_in_session', 'partial'}
-FORBIDDEN = ('atr', 'adx', 'sma', 'ema', 'rsi', 'z', 'slope', 'trend',
-             'state', 'membership', 'delta', 'purity')
+from acceptance_rules_v1_1 import ALLOWED_ROW as ALLOWED, BANNED as FORBIDDEN_SET
+FORBIDDEN = tuple(sorted(FORBIDDEN_SET))
 lines = ['A-7 字段白名单扫描（get_series XAUUSD D1 n=10，真实输出）', '']
 lines.append(f"允许字段集: {sorted(ALLOWED)}")
 lines.append(f"禁止字段（派生指标）: {FORBIDDEN}")

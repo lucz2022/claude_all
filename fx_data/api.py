@@ -94,6 +94,16 @@ SERIES_SYMBOLS = {
 SERIES_D1_ONLY = {'HG', 'DXY'}
 
 
+def _iso_utc_z(v) -> str:
+    """统一 UTC-Z ISO8601（验收规定格式：2026-09-15T22:00:00Z）。"""
+    ts = pd.Timestamp(v)
+    if ts.tzinfo is None:
+        ts = ts.tz_localize('UTC')
+    else:
+        ts = ts.tz_convert('UTC')
+    return ts.isoformat().replace('+00:00', 'Z')
+
+
 def get_series(symbol: str, tf: str = 'D1', n: int = 120,
                since: str | pd.Timestamp | None = None,
                asof: str | pd.Timestamp | None = None) -> dict:
@@ -148,6 +158,7 @@ def get_series(symbol: str, tf: str = 'D1', n: int = 120,
         df = df_all.sort_values('session_date').tail(n)
         rows = [{
             'session_date': str(r.session_date),
+            'ts_utc': _iso_utc_z(r.ts_utc),
             'open': float(r.open), 'high': float(r.high),
             'low': float(r.low), 'close': float(r.close),
             'volume': None if pd.isna(r.volume) else float(r.volume),

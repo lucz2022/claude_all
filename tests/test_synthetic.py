@@ -725,8 +725,9 @@ check('空会话→不可用', n5['staleness_status'] == 'unavailable')
 
 if all(st.norm_exists(s, 'D1') for s in ('XAUUSD', 'XTIUSD', 'XBRUSD', 'US500', 'HG')):
     # P0-2：get_series 五品种实测（对账 parquet、无派生字段、无前视）
-    allowed_keys = {'session_date', 'open', 'high', 'low', 'close', 'volume',
-                    'segment_id', 'roll_flag', 'bars_in_session', 'partial'}
+    allowed_keys = {'session_date', 'ts_utc', 'open', 'high', 'low', 'close',
+                    'volume', 'segment_id', 'roll_flag', 'bars_in_session',
+                    'partial'}
     from fx_data.resample import complete_sessions as _cs
     for sym in ('XAUUSD', 'XTIUSD', 'XBRUSD', 'US500', 'HG'):
         out = get_series(sym, n=50)
@@ -1587,8 +1588,9 @@ check('A-5 z 为截面标准化（s/std(r)）',
 # A-6/A-7/A-8：get_series 验收包
 if all(st.norm_exists(s, 'D1') for s in ('XAUUSD', 'XTIUSD', 'HG', 'US500')):
     from fx_data.api import get_series as _gs
-    ALLOWED_D1 = {'session_date', 'open', 'high', 'low', 'close', 'volume',
-                  'segment_id', 'roll_flag', 'bars_in_session', 'partial'}
+    ALLOWED_D1 = {'session_date', 'ts_utc', 'open', 'high', 'low', 'close',
+                  'volume', 'segment_id', 'roll_flag', 'bars_in_session',
+                  'partial'}
     # XAUUSD n=10 字段白名单扫描（A-7 一票否决项）
     _x10 = _gs('XAUUSD', n=10)
     check('A-7 n=10 行字段全部在白名单（无派生指标）',

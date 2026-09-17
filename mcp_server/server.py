@@ -16,6 +16,7 @@ import json
 import os
 import re
 import secrets
+import sys
 import time
 import urllib.parse
 from datetime import datetime
@@ -31,6 +32,19 @@ from starlette.responses import HTMLResponse, JSONResponse, RedirectResponse
 from starlette.routing import Route
 
 BASE_DIR = Path(__file__).resolve().parent
+REPO_ROOT = BASE_DIR.parent
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+# MCP 只做 adapter：领域计算/摘要一律调用 fx_data 已验收实现（单一事实源）
+from fx_data.api import get_env_state, get_series as api_get_series  # noqa: E402
+from fx_data.summary import (  # noqa: E402
+    board_compare as api_board_compare,
+    board_summary,
+    render_board_text,
+    render_compare_text,
+)
+
 load_dotenv(BASE_DIR / ".env")
 
 AUTH_TOKEN = os.environ.get("MCP_AUTH_TOKEN", "")
@@ -228,90 +242,151 @@ def clean_json(path: str, dedupe_key: str = None) -> str:
 
 
 # ------------------------------------------------------- domain tools (fx)
+# 全部为 fx_data 的薄 adapter——不得在 server 内维护第二套金融摘要逻辑。
 
 @mcp.tool()
 def fx_board(window: int = 20) -> str:
-    """Currency strength board summary (board__w{window}.json, e.g. window=20 or 50).
+    """Currency strength board text summary (window=20 or 50).
 
-    Returns ranking, dispersion, and per-currency strength / z-score / regime state.
+    Header carries staleness_hours / dispersion / board_vol / residual_rms;
+    per currency: z / z_short / delta / state / purity (purity<0.60 marked (!));
+    ends with momentum-turn ranking by |delta|.
     """
-    board = _read_json(f"board__w{window}.json")
-    lines = [
-        f"window={board['window']}  accel_window={board['accel_window']}",
-        f"ranking (strong->weak): {', '.join(board['ranking'])}",
-        f"dispersion={board['dispersion']:.5f}  board_vol_scalar={board['board_vol_scalar']}  residual_rms={board['residual_rms']:.5f}",
-        "",
-        "ccy  rank  strength    z       z_short  state",
-    ]
-    for c in sorted(board["currencies"], key=lambda x: x["rank"]):
-        lines.append(
-            f"{c['ccy']:<4} {c['rank']:>4}  {c['strength']:>+9.5f}  {c['z']:>+6.3f}  {c['z_short']:>+7.3f}  {c['state']}"
-        )
-    return "\n".join(lines)
+    if window not in (20, 50):
+        raise ValueError("window 必须为 20 或 50")
+    return render_board_text(board_summary(window))
 
 
 @mcp.tool()
 def fx_env() -> str:
-    """Market environment snapshot (env.json): regime, ratios, risk gauges, asof."""
-    env = _read_json("env.json")
+    """Market environment snapshot: regime, reflation inputs, gauge decomposition,
+    self-reference warning, staleness. Rendered from fx_data.env (single source)."""
+    env = get_env_state()
+    warn = env.get("gauge_self_reference_warning") or []
     lines = [
+        f"schema_version: {env.get('schema_version')}",
         f"regime_type: {env['regime_type']}   asof: {env.get('asof')}",
         f"weather_gauge: {env['weather_gauge']:.2f}   vix_level: {env.get('vix_level')}",
-        f"effective_session: {env.get('effective_session')}   calendar_intersection_ratio: {env.get('calendar_intersection_ratio'):.3f}",
+        f"effective_session: {env.get('effective_session')}"
+        f"   staleness_hours: {env.get('staleness_hours')}"
+        f"   staleness_status: {env.get('staleness_status')}",
         "",
         "ratios:",
     ]
     for name, r in env.get("ratios", {}).items():
         lines.append(
-            f"  {name}: level={r['level']:.6g}  slope_5d={r['slope_5d']:+.4f}  state={r['state']}"
+            f"  {name}: level={r['level']:.6g}  slope_5d={r['slope_5d']:+.4f}"
+            f"  state={r['state']}"
         )
-    lines.append("")
-    lines.append("coefficient: " + json.dumps(env.get("coefficient", {})))
+    ri = env.get("regime_inputs", {})
+    lines += [
+        "",
+        "regime_inputs:",
+        f"  reflation_proxy: {ri.get('reflation_proxy')}",
+        f"  reflation_value: {ri.get('reflation_value')}",
+        f"  reflation_state: {ri.get('reflation_state')}",
+        f"  reflation_direction_convention: {ri.get('reflation_direction_convention')}",
+        f"  reflation_threshold: {ri.get('reflation_threshold')}",
+        f"  reflation_data_source: {ri.get('reflation_data_source')}",
+        f"  reflation_real_source: {ri.get('reflation_real_source')}",
+        f"  reflation_coverage_note: {ri.get('reflation_coverage_note')}",
+        f"  risk_proxy: {ri.get('risk_proxy')}  risk_value: {ri.get('risk_value')}",
+    ]
+    gsc = env.get("gauge_sum_check", {})
+    lines += [
+        "",
+        f"gauge_sum_check: abs_diff={gsc.get('abs_diff')}"
+        f"  sum={gsc.get('sum_contrib')}  gauge={gsc.get('weather_gauge')}",
+        "gauge_components:",
+    ]
+    for c in env.get("gauge_components", []):
+        lines.append(
+            f"  {c['name']}: label={c.get('label')}  z20={c.get('z20')}"
+            f"  z50={c.get('z50')}  contrib={c.get('contrib')}"
+            + (f"  [{c['note']}]" if c.get("note") else "")
+        )
+    lines += [
+        "",
+        "gauge_underlying_exposure:",
+    ]
+    for u, e in sorted(env.get("gauge_underlying_exposure", {}).items()):
+        lines.append(
+            f"  {u}: n_components={e['n_components']}  components={e['components']}"
+            f"  net_sign={e['net_sign']:+d}  abs_weight={e['abs_weight']:.2f}"
+        )
+    lines += [
+        f"gauge_underlying_concentration: {env.get('gauge_underlying_concentration')}",
+    ]
+    if warn:
+        lines.append(f"⚠ gauge_self_reference_warning: {', '.join(warn)} — 分析该标的时本 gauge 不独立")
+    else:
+        lines.append("gauge_self_reference_warning: []")
+    lines += [
+        "",
+        "coefficient: " + json.dumps(env.get("coefficient", {}), ensure_ascii=False),
+        f"calendar_intersection_ratio: {env.get('calendar_intersection_ratio')}",
+    ]
     srcs = env.get("sources")
     if srcs:
-        lines.append("sources: " + (", ".join(map(str, srcs)) if isinstance(srcs, list) else str(srcs)))
+        lines.append("sources: " + json.dumps(srcs, ensure_ascii=False))
     return "\n".join(lines)
 
 
 @mcp.tool()
 def fx_board_compare() -> str:
-    """Compare the w20 (fast) and w50 (slow) currency boards: rank shifts and state changes."""
-    b20, b50 = _read_json("board__w20.json"), _read_json("board__w50.json")
-    s20 = {c["ccy"]: c for c in b20["currencies"]}
-    s50 = {c["ccy"]: c for c in b50["currencies"]}
-    lines = [
-        f"ranking w20: {', '.join(b20['ranking'])}",
-        f"ranking w50: {', '.join(b50['ranking'])}",
-        f"dispersion: w20={b20['dispersion']:.5f}  w50={b50['dispersion']:.5f}",
-        "",
-        "ccy  rank(w20->w50)  state(w20->w50)      z(w20->w50)",
-    ]
-    for ccy in b20["ranking"]:
-        a, b = s20[ccy], s50[ccy]
-        lines.append(
-            f"{ccy:<4} {a['rank']:>2} -> {b['rank']:<2}        {a['state']} -> {b['state']:<12} {a['z']:>+6.3f} -> {b['z']:>+6.3f}"
-        )
-    return "\n".join(lines)
+    """Compare w20 vs w50 boards: z / z_short / Δ(w20) / Δ(w50) / sign consistency.
+
+    Rows where the two windows' Δ signs disagree are marked 冲突(!) and listed.
+    """
+    return render_compare_text(api_board_compare(20, 50))
 
 
 @mcp.tool()
 def dxy_series(n: int = 30, since: str = None) -> str:
-    """DXY (dollar index) daily closes from dxy__D1.parquet.
+    """DXY daily series (append-only full history).
 
-    n: number of most recent rows; since: optional 'YYYY-MM-DD' start filter.
+    Returns window_mode / window_rows / first_session / stats_scope / warning /
+    stats(min,max,mean) / available / rows via fx_data.get_series("DXY").
     """
-    import pandas as pd
+    obj = api_get_series("DXY", tf="D1", n=n, since=since)
+    stats = obj.get("stats", {})
+    lines = [
+        f"window_mode: {obj.get('window_mode')}   stats_scope: {obj.get('stats_scope')}",
+        f"window_rows: {obj.get('window_rows')}   first_session: {obj.get('first_session')}",
+        f"available: {obj.get('available')}   row_count: {obj.get('row_count')}"
+        f"   truncated: {obj.get('truncated')}",
+        f"stats.min: {stats.get('min'):.4f}   stats.max: {stats.get('max'):.4f}"
+        f"   stats.mean: {stats.get('mean'):.4f}",
+        f"warning: {obj.get('warning')}",
+        f"staleness_hours: {obj.get('staleness_hours')}  status: {obj.get('staleness_status')}",
+        "",
+    ]
+    for r in obj.get("rows", []):
+        lines.append(f"{r['session_date']}  {r['close']:.4f}")
+    return "\n".join(lines)
 
-    df = pd.read_parquet(_resolve("dxy__D1.parquet"))
-    if since:
-        df = df[df["session_date"] >= since]
-    part = df.tail(n)
-    stats = (
-        f"DXY daily closes: {len(df)} rows ({df['session_date'].iloc[0]} .. {df['session_date'].iloc[-1]})\n"
-        f"last close={df['close'].iloc[-1]:.4f}  min={df['close'].min():.4f}  max={df['close'].max():.4f}  "
-        f"mean={df['close'].mean():.4f}\n\n"
-    )
-    return stats + part.to_string(index=False)
+
+@mcp.tool()
+def get_series(
+    symbol: str,
+    tf: str = "D1",
+    n: int = 120,
+    since: str | None = None,
+    asof: str | None = None,
+) -> str:
+    """Raw OHLCV price series (reverse-audit channel; no derived indicators).
+
+    Symbols: XAUUSD/XTIUSD/XBRUSD/US500/HG(连续)/DXY + main FX crosses; tf D1|H1.
+    Rows carry session_date/ts_utc(UTC-Z)/OHLCV + provenance fields only.
+    参数错误以 {"error": "..."} 正常返回（含可用 symbol / tf 清单）——
+    不抛异常：SDK 在长 SSE 会话上的工具异常路径存在不回包问题（实测），
+    结构化错误既可靠又便于消费方解析。
+    """
+    try:
+        obj = api_get_series(symbol=symbol, tf=tf, n=n, since=since, asof=asof)
+    except ValueError as e:
+        return json.dumps({"error": str(e)}, ensure_ascii=False)
+    return json.dumps(obj, ensure_ascii=False, indent=2)
 
 
 # ------------------------------------------------------------------ assemblage
